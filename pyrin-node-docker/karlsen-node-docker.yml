@@ -1,0 +1,37 @@
+version: "2.4"
+services:
+  # karlsend
+  karlsen-node:
+    image: ubuntu:22.04
+    volumes:
+      - /home/user/karlsen:/root/karlsen
+      - /home/user/.karlsend:/root/.karlsend
+      - /home/user/.karlsenwallet:/root/.karlsenwallet
+    command: /root/karlsen/karlsend --utxoindex
+    restart: always
+
+  # An external startup check tool for karlsen node
+  # Using https://github.com/jwilder/dockerize
+  # Wait that TCP karlsen-node:42110 port of RPC becomes available before
+  # starting the karlsen-wallet to avoid errors on a startup
+  karlsen-node_ready:
+    image: jwilder/dockerize
+    command: "/bin/sh -c 'while true ; do dockerize -wait tcp://karlsen-node:42110 -timeout 300s ; sleep 30 ; done'"
+    depends_on:
+      - karlsen-node
+    healthcheck:
+      test: ["CMD", "dockerize", "-wait", "tcp://karlsen-node:42110"]
+      interval: 1s
+      retries: 999
+
+  # karlsenwallet
+  karlsen-wallet:
+    image: ubuntu:22.04
+    volumes:
+      - /home/user/karlsen:/root/karlsen
+      - /home/user/.karlsend:/root/.karlsend
+      - /home/user/.karlsenwallet:/root/.karlsenwallet
+    command: /root/karlsen/karlsenwallet start-daemon -s karlsen-node
+    depends_on:
+      karlsen-node_ready:
+        condition: service_healthy

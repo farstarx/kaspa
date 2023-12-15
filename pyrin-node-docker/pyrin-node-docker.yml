@@ -1,0 +1,17 @@
+services:
+  pyrin-node:
+    image: ubuntu:22.04
+    volumes:
+      - /home/user/pyrin:/root/pyrin
+      - /home/user/.pyrinwallet:/root/.pyrinwallet
+      - /home/user/.pyipad:/root/.pyipad
+    command: /root/pyrin/pyipad --utxoindex
+  pyrin-wallet:
+    image: ubuntu:22.04
+    volumes:
+      - /home/user/pyrin:/root/pyrin
+      - /home/user/.pyrinwallet:/root/.pyrinwallet
+      - /home/user/.pyipad:/root/.pyipad
+    command: /root/pyrin/pyrinwallet start-daemon -s pyrin-node
+    depends_on:
+      - pyrin-node
